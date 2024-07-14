@@ -202,36 +202,34 @@ function keyPressed() {
 }
 
 //Class for the falling piece
-class PlayPiece {
+class PlayPiece{
     constructor() {
-        this.pros = createVector(0, 0);
+        this.pos = createVector(0, 0);
         this.rotation = 0;
         this.nextPieceType = Math.floor(Math.random() * 7);
         this.nextPieces = [];
-        this.nextPieceType = 0;
+        this.PieceType = 0;
         this.pieces = [];
         this.orientation = [];
         this.fallen = false;
     }
 
     //Generate the next piece
-    nextPiece() {
+    nextPiece(){
         this.nextPieceType = pseudoRandom(this.pieceType);
         this.nextPieces = [];
 
         const points = orientPoints(this.nextPieceType, 0);
         let xx = 525, yy = 490;
 
-        if (this.nextPieceType !== 0 && this.nextPieceType !== 3 && this.nextPieceType !== 5 ) {
+        if(this.nextPieceType !== 0 && this.nextPieceType !== 3 && this.nextPieceType !== 5){
             xx += (gridSpace * 0.5);
         }
-
         if (this.nextPieceType == 5) {
             xx -= (gridSpace * 0.5);
         }
-
         for (let i = 0; i < 4; i++) {
-            this.nextPieces.push(new Square(xx + point[i][0] * gridSpace, yy + points[i][1] * gridSpace, this.nextPieceType));
+            this.nextPieces.push(new Square(xx + points[i][0] * gridSpace, yy + points[i][1] * gridSpace, this.nextPieceType));
         }
     }
 
@@ -240,57 +238,267 @@ class PlayPiece {
         if (!this.futureCollision(0, amount, this.rotation)) {
             this.addPos(0, amount);
             this.fallen = true;
-        }else {
-            this.commitShape();
+        }else{
+            if (!this.fallen) {
+                pauseGame = true;
+                gameOver = true;
+            }else{
+                this.commitShape();
+            }
         }
     }
-}
 
-//Reset the current piece
-resetPiece() {
-    this.rotation = 0;
-    this.fallen = false;
-    this.pos.x = 330;
-    this.pos.y = -60;
+    //Reset the current piece
+    resetPiece() {
+        this.rotation = 0;
+        this.fallen = false;
+        this.pos.x = 330;
+        this.pos.y = -60;
 
-    this.pieceType = this.nextPieceType;
+        this.pieceType = this.nextPieceType;
 
-    this.nextPiece();
-    this.newPoints();
-}
-
-//Generate the points for the current piece
-newPoints() {
-    const points = orientPoints(this.pieceType, this.rotation);
-    this.orientation = points;
-    this.pieces = [];
-
-    for(let i = 0; i < points.length; i++) {
-        this.pieces.push(new Square(this.pos.x + points[i][0] * gridSpace, this.pos.y + points[i][1] * gridSpace, this.pieceType));
+        this.nextPiece();
+        this.newPoints();
     }
-}
 
-//Update the points for the current piece
-updatePoints() {
-    if(this.pieces) {
+    //Generate the points for the current piece
+    newPoints() {
         const points = orientPoints(this.pieceType, this.rotation);
         this.orientation = points;
-        for (let i = 0; i < 4; i++) {
-            this.pieces[i].pos.x = this.pos.x + points[i][0] * gridSpace;
-            this.pieces[i].pos.y = this.pos.y + points[i][0] * gridSpace;
-         }
+        this.pieces = [];
+
+        for (let i = 0; i < points.length; i++) {
+            this.pieces.push(new Square(this.pos.x + points[i][0] * gridSpace, this.pos.y + points[i][1] * gridSpace, this.pieceType));
+        }
+    }
+
+    //Update the position of the current piece
+    updatePoints(){
+        if (this.pieces) {
+            const points = orientPoints(this.pieceType, this.rotation);
+            this.orientation = points;
+            for (let i = 0; i < 4; i++) {
+                this.pieces[i].pos.x = this.pos.x + points[i][0] * gridSpace;
+                this.pieces[i].pos.y = this.pos.y + points[i][1] * gridSpace;
+            }
+        }
+    }
+
+    //Add an offset to the current piece
+    addPos(x, y){
+        this.pos.x += x;
+        this.pos.y += y;
+
+        if (this.pieces) {
+            for (let i = 0; i < 4; i++) {
+                this.pieces[i].pos.x += x;
+                this.pieces[i].pos.y += y;
+            }
+        }
+    }
+
+    //Check if there will be a collision in the future
+    futureCollision(x, y, rotation) {
+        let xx, yy, points = 0;
+        if (rotation !== this.rotation) {
+            points = orientPoints(this.pieceType, rotation);
+        }
+
+        for (let i = 0; i < this.pieces.length; i++) {
+            if (points) {
+                xx = this.pos.x + points[i][0] * gridSpace;
+                yy = this.pos.y + points[i][1] * gridSpace;
+            } else {
+                xx = this.pieces[i].pos.x + x;
+                yy = this.pieces[i].pos.y + y;
+            }
+            if (xx < gameEdgeLeft || xx + gridSpace > gameEdgeRight || yy + gridSpace > height) {
+                return true;
+            }
+            for (let j = 0; j < gridPieces.length; j++) {
+                if (xx === gridPieces[j].pos.x) {
+                    if (yy >= gridPieces[j].pos.y && yy < gridPieces[j].pos.y + gridSpace) {
+                        return true;
+                    }
+                    if (yy + gridSpace > gridPieces[j].pos.y && yy + gridSpace <= gridPieces[j].pos.y + gridSpace) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    //Handle user input
+    input(key) {
+        switch (key) {
+            case LEFT_ARROW:
+                if (!this.futureCollision(-gridSpace, 0, this.rotation)) {
+                    this.addPos(-gridSpace, 0);
+                }
+                break;
+            case RIGHT_ARROW:
+                if (!this.futureCollision(gridSpace, 0, this.rotation)) {
+                    this.addPos(gridSpace, 0);
+                }
+                break;
+            case UP_ARROW:
+                let newRotation = this.rotation + 1;
+                if (newRotation > 3) {
+                    newRotation = 0;
+                }
+                if (!this.futureCollision(0, 0, newRotation)) {
+                    this.rotation = newRotation;
+                    this.updatePoints();
+                }
+                break;
+        }
+    }
+
+    //Rotate the current piece
+    rotate() {
+        this.rotation += 1;
+        if (this.rotation > 3) {
+            this.rotation = 0;
+        }
+        this.updatePoints();
+    }
+
+    // Show the current piece
+    show() {
+        for (let i = 0; i < this.pieces.length; i++) {
+            this.pieces[i].show();
+        }
+        for (let i = 0; i < this.nextPieces.length; i++) {
+            this.nextPieces[i].show();
+        }
+    }
+
+    // Commit the current shape to the grid
+    commitShape() {
+        for (let i = 0; i < this.pieces.length; i++) {
+            gridPieces.push(this.pieces[i]);
+        }
+        this.resetPiece();
+        analyzeGrid();
     }
 }
 
-//Add an offset to the position of current piece
-addPos(x, y) {
-    this.pos.x += x;
-    this.pos.y += y;
+//Class for each square in a piece
+class Square {
+    constructor(x, y, type) {
+        this.pos = createVector(x, y);
+        this.type = type;
+    }
 
-    if (this.pieces) {
-        for (let i = 0; i < 4; i++) {
-            this.pieces[i].pos.x += x;
-            this.pieces[i].pos.y += y;
+    //Show the square
+    show() {
+        strokeWeight(2);
+        const colorDark = '#092e1d';
+        const colorMid = colors[this.type];
+
+        fill(colorMid);
+        stroke(25);
+        rect(this.pos.x, this.pos.y, gridSpace - 1, gridSpace - 1);
+
+        noStroke();
+        fill(255);
+        rect(this.pos.x + 6, this.pos.y + 6, 18, 2);
+        rect(this.pos.x + 6, this.pos.y + 6, 2, 16);
+        fill(25);
+        rect(this.pos.x + 6, this.pos.y + 20, 18, 2);
+        rect(this.pos.x + 22, this.pos.y + 6, 2, 16);
+    }
+}
+
+//Generate the pseudo-random number for the next piece
+function pseudoRandom(previous) {
+    let roll = Math.floor(Math.random() * 8);
+    if (roll === previous || roll === 7) {
+        roll = Math.floor(Math.random() * 7);
+    }
+    return roll;
+}
+
+//Analyze the grid and clear lines if necessary
+function analyzeGrid() {
+    let score = 0;
+    while (checkLines()) {
+        score += 100;
+        linesCleared += 1;
+        if (linesCleared % 10 === 0) {
+            currentLevel += 1;
+            if (updateEveryCurrent > 2) {
+                updateEveryCurrent -= 10;
+            }
         }
     }
+    if (score > 100) {
+        score *= 2;
+    }
+    currentScore += score;
+}
+
+//Check if there are any complete lines in the grid
+function checkLines() {
+    for (let y = 0; y < height; y += gridSpace) {
+        let count = 0;
+        for (let i = 0; i < gridPieces.length; i++) {
+            if (gridPieces[i].pos.y === y) {
+                count++;
+            }
+        }
+        if (count === 10) {
+            // Remove the pieces at this y-coordinate
+            gridPieces = gridPieces.filter(piece => piece.pos.y !== y);
+            // Move down the pieces above this y-coordinate
+            for (let i = 0; i < gridPieces.length; i++) {
+                if (gridPieces[i].pos.y < y) {
+                    gridPieces[i].pos.y += gridSpace;
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+//Class for the grid worker
+class Worker {
+    constructor(y, amount) {
+        this.amountActual = 0;
+        this.amountTotal = amount;
+        this.yVal = y;
+    }
+
+    //Perform work on the grid
+    work() {
+        if (this.amountActual < this.amountTotal) {
+            for (let j = 0; j < gridPieces.length; j++) {
+                if (gridPieces[j].pos.y < y) {
+                    gridPieces[j].pos.y += 5;
+                }
+            }
+            this.amountActual += 5;
+        } else {
+            gridWorkers.shift();
+        }
+    }
+}
+
+//Reset the game state
+function resetGame() {
+    fallingPiece = new PlayPiece();
+    fallingPiece.resetPiece();
+    gridPieces = [];
+    lineFades = [];
+    gridWorkers = [];
+    currentScore = 0;
+    currentLevel = 1;
+    linesCleared = 0;
+    ticks = 0;
+    updateEvery = 15;
+    updateEveryCurrent = 15;
+    fallSpeed = gridSpace * 0.5;
+    pauseGame = false;
+    gameOver = false;
 }
