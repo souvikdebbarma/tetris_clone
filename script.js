@@ -162,5 +162,135 @@ function draw() {
     fill(255);
     noStroke();
     textSize();
-    text("controls: \n")
+    text("Controls:\n↑\n← ↓ →\n", 75, 155);
+    text("Left and Right:\nmove side to side", 75, 230);
+    text("Up:\nrotate", 75, 280);
+    text("Down:\nfall faster", 75, 330);
+    text("R:\nreset game", 75, 380);
+
+    //Show the gameover text
+    if (gameOver) {
+        fill(colorDark);
+        textSize(54);
+        textAlign(CENTER);
+        text("Game Over!", 300, 270);
+    }
+
+    //Draw the game border
+    strokeWeight(3);
+    stroke('#304550');
+    noFill();
+    rect(0, 0, width, height);
+}
+
+//Function called when the key is pressed
+function keyPressed() {
+    if (keyCode === 82) {
+        // 'R' key
+        resetGame();
+    }
+    if (!pauseGame) {
+        if (keyCode === LEFT_ARROW) {
+            fallingPiece.input(LEFT_ARROW);
+        } else if (keyCode === RIGHT_ARROW) {
+            fallingPiece.input(RIGHT_ARROW);
+        }
+        if (keyCode === UP_ARROW) {
+            fallingPiece.input(UP_ARROW);
+        }
+    }
+}
+
+//Class for the falling piece
+class PlayPiece {
+    constructor() {
+        this.pros = createVector(0, 0);
+        this.rotation = 0;
+        this.nextPieceType = Math.floor(Math.random() * 7);
+        this.nextPieces = [];
+        this.nextPieceType = 0;
+        this.pieces = [];
+        this.orientation = [];
+        this.fallen = false;
+    }
+
+    //Generate the next piece
+    nextPiece() {
+        this.nextPieceType = pseudoRandom(this.pieceType);
+        this.nextPieces = [];
+
+        const points = orientPoints(this.nextPieceType, 0);
+        let xx = 525, yy = 490;
+
+        if (this.nextPieceType !== 0 && this.nextPieceType !== 3 && this.nextPieceType !== 5 ) {
+            xx += (gridSpace * 0.5);
+        }
+
+        if (this.nextPieceType == 5) {
+            xx -= (gridSpace * 0.5);
+        }
+
+        for (let i = 0; i < 4; i++) {
+            this.nextPieces.push(new Square(xx + point[i][0] * gridSpace, yy + points[i][1] * gridSpace, this.nextPieceType));
+        }
+    }
+
+    //Make the piece fall
+    fall(amount) {
+        if (!this.futureCollision(0, amount, this.rotation)) {
+            this.addPos(0, amount);
+            this.fallen = true;
+        }else {
+            this.commitShape();
+        }
+    }
+}
+
+//Reset the current piece
+resetPiece() {
+    this.rotation = 0;
+    this.fallen = false;
+    this.pos.x = 330;
+    this.pos.y = -60;
+
+    this.pieceType = this.nextPieceType;
+
+    this.nextPiece();
+    this.newPoints();
+}
+
+//Generate the points for the current piece
+newPoints() {
+    const points = orientPoints(this.pieceType, this.rotation);
+    this.orientation = points;
+    this.pieces = [];
+
+    for(let i = 0; i < points.length; i++) {
+        this.pieces.push(new Square(this.pos.x + points[i][0] * gridSpace, this.pos.y + points[i][1] * gridSpace, this.pieceType));
+    }
+}
+
+//Update the points for the current piece
+updatePoints() {
+    if(this.pieces) {
+        const points = orientPoints(this.pieceType, this.rotation);
+        this.orientation = points;
+        for (let i = 0; i < 4; i++) {
+            this.pieces[i].pos.x = this.pos.x + points[i][0] * gridSpace;
+            this.pieces[i].pos.y = this.pos.y + points[i][0] * gridSpace;
+         }
+    }
+}
+
+//Add an offset to the position of current piece
+addPos(x, y) {
+    this.pos.x += x;
+    this.pos.y += y;
+
+    if (this.pieces) {
+        for (let i = 0; i < 4; i++) {
+            this.pieces[i].pos.x += x;
+            this.pieces[i].pos.y += y;
+        }
+    }
 }
