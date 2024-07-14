@@ -34,11 +34,11 @@ function orientPoints(pieceType, rotation) {
                         [-1, 1],
                         [-1, 2]
                     ];
-                    break; 
+                    break;
             }
             break;
         case 1:
-            switch(rotation) {
+            switch (rotation) {
                 case 0:
                     results = [
                         [-2, -1],
@@ -71,17 +71,16 @@ function orientPoints(pieceType, rotation) {
                         [-2, 1]
                     ];
                     break;
-                
             }
             break;
         case 2:
-            switch(rotation) {
+            switch (rotation) {
                 case 0:
                     results = [
                         [-2, 0],
                         [-1, 0],
                         [0, 0],
-                        [0, 1]
+                        [0, -1]
                     ];
                     break;
                 case 1:
@@ -95,7 +94,7 @@ function orientPoints(pieceType, rotation) {
                 case 2:
                     results = [
                         [-2, 0],
-                        [-1, 1],
+                        [-2, 1],
                         [-1, 0],
                         [0, 0]
                     ];
@@ -108,7 +107,6 @@ function orientPoints(pieceType, rotation) {
                         [-1, 1]
                     ];
                     break;
-                
             }
             break;
         case 3:
